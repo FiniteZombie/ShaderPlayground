@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class TransformationGrid : MonoBehaviour {
@@ -8,6 +7,7 @@ public class TransformationGrid : MonoBehaviour {
     public int gridResolution = 10;
     private Transform[] grid;
     private List<Transformation> transformations = new List<Transformation>();
+    private Matrix4x4 transformation;
 
     private void Awake() {
         grid = new Transform[gridResolution * gridResolution * gridResolution];
@@ -21,7 +21,7 @@ public class TransformationGrid : MonoBehaviour {
     }
 
     private void Update() {
-        GetComponents(transformations);
+        UpdateTransformation();
         for (int i = 0, z = 0; z < gridResolution; z++) {
             for (int y = 0; y < gridResolution; y++) {
                 for (int x = 0; x < gridResolution; x++, i++) {
@@ -31,13 +31,19 @@ public class TransformationGrid : MonoBehaviour {
         }
     }
 
+    private void UpdateTransformation() {
+        GetComponents(transformations);
+        if (transformations.Count > 0) {
+            transformation = transformations[0].Matrix;
+            for (int i = 1; i < transformations.Count; i++) {
+                transformation = transformations[i].Matrix * transformation;
+            }
+        }
+    }
+
     private Vector3 TransformPoint(int x, int y, int z) {
         var coordinates = GetCoordinates(x, y, z);
-        foreach(var transformation in transformations) {
-            coordinates = transformation.Apply(coordinates);
-        }
-
-        return coordinates;
+        return transformation.MultiplyPoint(coordinates);
     }
 
     private Transform CreateGridPoint(int x, int y, int z) {
